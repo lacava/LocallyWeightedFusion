@@ -8,9 +8,9 @@ In Python:
 
 ```python
 from LocallyWeightedFusion import LocallyWeightedFusion
-# initialize classifier
+# initialize 
 lwf = LocallyWeightedFusion()
-# train classifier
+# train 
 lwf.fit(X,Y)
 # make predictions on test set
 y_test = lwf.predict(X_test)
