@@ -24,7 +24,7 @@ from ellyn import ellyn
 from sklearn.linear_model import LassoLarsCV, LogisticRegression
 from sklearn.svm import SVR, LinearSVR, SVC, LinearSVC
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
-from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, BaggingRegressor
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from ._version import __version__
 from sklearn.base import BaseEstimator
@@ -92,10 +92,11 @@ class LocallyWeightedFusion(BaseEstimator):
                 self.estimators.append(copy.deepcopy(self.base_estimator))
                 self.estimators[-1].best_estimator_ = m
         else:
-            for i in np.arange(self.n_estimators):
+            br = BaggingRegressor(base_estimator=self.base_estimator,n_estimators=self.n_estimators).fit(features,labels)
+            self.estimators = br.estimators_
 
-                self.estimators.append(copy.deepcopy(self.base_estimator))
         # define neighborhood threshold for each sample as 5% of the range of the sample
+        tmp = np.vstack(set(tuple(row) for row in a))
         self.R = [self.threshold*(np.max(x)-np.min(x)) for x in features]
         self.X_train = features
         self.Y_train = labels.reshape(-1,1)
@@ -113,6 +114,11 @@ class LocallyWeightedFusion(BaseEstimator):
             if loc: # if there are training points near the query point
                 # calculate mean absolute error
                 mae = np.sum(np.abs(self.Y_est[loc]-self.Y_train[loc]),axis=0)/len(peers)
+
+                if np.all(mae==0):
+                    mae = np.ones((mae.shape[0],))
+                else:
+                    mae[mae==0] = np.min(mae[mae!=0])/2
                 # calculate mean error (bias)
                 if self.bias:
                     me = np.sum(self.Y_est[loc]-self.Y_train[loc],axis=0)/len(peers)
@@ -120,7 +126,7 @@ class LocallyWeightedFusion(BaseEstimator):
                     me = 0
                 # get weight
                 w = 1/mae
-                w[np.isinf(w)] = np.max(w[~np.isinf(w)])*2
+                # w[np.isinf(w)] = np.max(w[~np.isinf(w)])*2
             else: # if no neighbors are found, define equal weights for models
                 mae = 1
                 me = 0
@@ -216,7 +222,7 @@ def main():
     parser.add_argument('-is', action='store', dest='INPUT_SEPARATOR', default='\t',
                         type=str, help='Character used to separate columns in the input file.')
 
-    parser.add_argument('-est', action='store', dest='BASE_ESTIMATOR', default='ellyn',choices = ['ellyn','lasso'],
+    parser.add_argument('-est', action='store', dest='BASE_ESTIMATOR', default='ellyn',choices = ['ellyn','lasso','svr','lr','svc','rfc','rfr','dtc','dtr','knc','knr'],
                         type=str, help='base estimator to use.')
 
     parser.add_argument('-n', action='store', dest='N_ESTIMATORS', default=10,
