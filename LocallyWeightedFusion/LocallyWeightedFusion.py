@@ -18,7 +18,6 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import sys
-sys.path.insert(0,'/media/bill/data/Dropbox/PostDoc/code/ellyn/ellyn')
 from ellyn import ellyn
 
 from sklearn.linear_model import LassoLarsCV, LogisticRegression
@@ -96,7 +95,7 @@ class LocallyWeightedFusion(BaseEstimator):
             self.estimators = br.estimators_
 
         # define neighborhood threshold for each sample as 5% of the range of the sample
-        tmp = np.vstack(set(tuple(row) for row in a))
+        # tmp = np.vstack(set(tuple(row) for row in a))
         self.R = [self.threshold*(np.max(x)-np.min(x)) for x in features]
         self.X_train = features
         self.Y_train = labels.reshape(-1,1)
